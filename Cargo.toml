@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 byteorder = "1.3"
-i8080 = { path="/src/i8080" }
+i8080 = { git = "https://github.com/mohanson/i8080" }
 minifb ="0.11"
+rodio = "0.8"
 rog = "0.1"
