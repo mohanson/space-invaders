@@ -18,16 +18,10 @@ The game uses an **Intel 8080 central processing unit (CPU)**, displays raster g
 
 I use a separate repo to implement the i8080 CPU, please goto [https://github.com/mohanson/i8080](https://github.com/mohanson/i8080) to learn more.
 
-# Tests
-
-Tested in the following environments:
-
-- Rust 1.34.0
-
 # Specs
 
 - [http://computerarcheology.com/Arcade/SpaceInvaders/Hardware.html](http://computerarcheology.com/Arcade/SpaceInvaders/Hardware.html)
 
 # Licences
 
-WTFPL
+MIT

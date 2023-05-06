@@ -1,10 +1,6 @@
-use std::cell::RefCell;
-use std::fs::File;
-use std::io::{Cursor, Read};
-use std::path::Path;
-use std::rc::Rc;
-
 use i8080::Memory;
+use rodio::Source;
+use std::io::Read;
 
 #[derive(Default)]
 struct DeviceIO {
@@ -68,17 +64,20 @@ impl Display {
                 self.raster[DISPLAY_W * new_y as usize + new_x as usize] = pixel;
             }
         }
-        self.window.update_with_buffer(&self.raster).unwrap();
+        self.window
+            .update_with_buffer(&self.raster, DISPLAY_W, DISPLAY_H)
+            .unwrap();
     }
 }
 
 struct Sounder {
-    sink: rodio::Sink,
+    stream: rodio::OutputStream,
+    stream_handle: rodio::OutputStreamHandle,
     wavs: [Vec<u8>; 10],
 }
 
 impl Sounder {
-    fn power_up(snd: impl AsRef<Path>) -> Self {
+    fn power_up(snd: impl AsRef<std::path::Path>) -> Self {
         let res = snd.as_ref().to_path_buf();
         let get = |x| {
             let mut res = res.clone();
@@ -100,15 +99,20 @@ impl Sounder {
         for i in 0..10 {
             wavs[i as usize] = get(format!("{}.wav", i));
         }
-        let device = rodio::default_output_device().unwrap();
-        let sink = rodio::Sink::new(&device);
-        Self { sink, wavs }
+        let (stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
+        Self {
+            stream,
+            stream_handle,
+            wavs,
+        }
     }
 
     fn play_sound(&self, i: usize) {
         let data = self.wavs[i].clone();
-        let cursor = Cursor::new(data);
-        self.sink.append(rodio::Decoder::new(cursor).unwrap());
+        let cursor = std::io::Cursor::new(data);
+        self.stream_handle
+            .play_raw(rodio::Decoder::new_wav(cursor).unwrap().convert_samples())
+            .unwrap();
     }
 }
 
@@ -117,14 +121,14 @@ struct Invaders {
     display: Display,
     sounder: Sounder,
     interrupt_addr: u16,
-    mem: Rc<RefCell<i8080::Linear>>,
+    mem: std::rc::Rc<std::cell::RefCell<i8080::Linear>>,
     io: DeviceIO,
 }
 
 impl Invaders {
-    fn power_up(rom: impl AsRef<Path>) -> Self {
-        let mem = Rc::new(RefCell::new(i8080::Linear::new()));
-        let mut file = File::open(rom).unwrap();
+    fn power_up(rom: impl AsRef<std::path::Path>) -> Self {
+        let mem = std::rc::Rc::new(std::cell::RefCell::new(i8080::Linear::new()));
+        let mut file = std::fs::File::open(rom).unwrap();
         let mut buf = Vec::new();
         file.read_to_end(&mut buf).unwrap();
         mem.borrow_mut().data[0x00..buf.len()].clone_from_slice(&buf[..]);
@@ -188,7 +192,7 @@ impl Invaders {
             (minifb::Key::Q, 1, 5),     // P1 left
             (minifb::Key::Left, 2, 5),  // P2 left
             (minifb::Key::E, 1, 6),     // P1 right
-            (minifb::Key::Right, 2, 6), // p2 right
+            (minifb::Key::Right, 2, 6), // P2 right
             (minifb::Key::T, 2, 2),     // tilt
         ];
         for (k, inpi, biti) in &keys {
@@ -262,6 +266,8 @@ impl Invaders {
 
 fn main() {
     let mut invaders = Invaders::power_up("./res/invaders.rom");
+    // If this is dropped playback will end & attached OutputStreamHandle will no longer work.
+    let _ = invaders.sounder.stream;
     println!("----------------------------------");
     println!("| Welcome to space invaders!     |");
     println!("|                                |");
