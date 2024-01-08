@@ -35,10 +35,7 @@ impl Display {
         option.resize = true;
         option.scale = minifb::Scale::X2;
         let window = minifb::Window::new("github.com/mohanson/i8080", DISPLAY_W, DISPLAY_H, option).unwrap();
-        Display {
-            raster: vec![0x00ff_ffff; DISPLAY_W * DISPLAY_H * 2],
-            window,
-        }
+        Display { raster: vec![0x00ff_ffff; DISPLAY_W * DISPLAY_H * 2], window }
     }
 
     fn draw_pixel(&mut self, data: &[u8]) {
@@ -64,9 +61,7 @@ impl Display {
                 self.raster[DISPLAY_W * new_y as usize + new_x as usize] = pixel;
             }
         }
-        self.window
-            .update_with_buffer(&self.raster, DISPLAY_W, DISPLAY_H)
-            .unwrap();
+        self.window.update_with_buffer(&self.raster, DISPLAY_W, DISPLAY_H).unwrap();
     }
 }
 
@@ -84,35 +79,18 @@ impl Sounder {
             res.push(x);
             std::fs::read(res).unwrap()
         };
-        let mut wavs = [
-            vec![],
-            vec![],
-            vec![],
-            vec![],
-            vec![],
-            vec![],
-            vec![],
-            vec![],
-            vec![],
-            vec![],
-        ];
+        let mut wavs = [vec![], vec![], vec![], vec![], vec![], vec![], vec![], vec![], vec![], vec![]];
         for i in 0..10 {
             wavs[i as usize] = get(format!("{}.wav", i));
         }
         let (stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
-        Self {
-            stream,
-            stream_handle,
-            wavs,
-        }
+        Self { stream, stream_handle, wavs }
     }
 
     fn play_sound(&self, i: usize) {
         let data = self.wavs[i].clone();
         let cursor = std::io::Cursor::new(data);
-        self.stream_handle
-            .play_raw(rodio::Decoder::new_wav(cursor).unwrap().convert_samples())
-            .unwrap();
+        self.stream_handle.play_raw(rodio::Decoder::new_wav(cursor).unwrap().convert_samples()).unwrap();
     }
 }
 

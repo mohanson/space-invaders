@@ -1,10 +1,10 @@
 [package]
 name = "space-invaders"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["mohanson <mohanson@outlook.com>"]
 edition = "2021"
 
 [dependencies]
 i8080 = { git = "https://github.com/mohanson/i8080" }
-minifb ="0.24"
+minifb ="0.25"
 rodio = "0.17"
